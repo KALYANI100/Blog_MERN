@@ -273,6 +273,14 @@ const styles = `
     font-size: 0.95rem;
     line-height: 1.7;
     font-weight: 400;
+    white-space: pre-wrap;
+  }
+
+  .blog-body.preview {
+    display: -webkit-box;
+    -webkit-line-clamp: 4;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
   }
 
   .blog-actions {
@@ -280,6 +288,57 @@ const styles = `
     flex-direction: column;
     gap: 8px;
     flex-shrink: 0;
+  }
+
+  .modal-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+    z-index: 1000;
+  }
+
+  .modal-card {
+    background: white;
+    border-radius: 16px;
+    max-width: 600px;
+    width: 100%;
+    padding: 28px;
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.2);
+    animation: fadeIn 180ms ease;
+  }
+
+  .modal-card h2 {
+    margin-bottom: 16px;
+    color: #0066cc;
+    font-size: 1.5rem;
+  }
+
+  .modal-card p {
+    color: #444;
+    line-height: 1.7;
+    margin-bottom: 24px;
+  }
+
+  .modal-close {
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+    padding: 10px 18px;
+    border-radius: 10px;
+    border: none;
+    background: #0066cc;
+    color: white;
+    cursor: pointer;
+    font-weight: 600;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
   }
 
   .empty-state {
@@ -322,6 +381,12 @@ function Blog() {
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [editingId, setEditingId] = useState(null);
+  const [selectedBlog, setSelectedBlog] = useState(null);
+
+  const getUserId = (entity) => {
+    if (!entity) return null;
+    return String(entity._id || entity.id || entity);
+  };
 
   const handleLogout = () => {
     logout();
@@ -379,6 +444,14 @@ function Blog() {
     axios.delete(`${API_BASE_URL}/api/blogs/${id}`, config)
       .then(() => { loadBlogs(); if (editingId === id) clearForm(); })
       .catch(err => console.error("Delete failed:", err));
+  };
+
+  const viewFullBlog = (blog) => {
+    setSelectedBlog(blog);
+  };
+
+  const closeFullBlog = () => {
+    setSelectedBlog(null);
   };
 
   return (
@@ -464,19 +537,39 @@ function Blog() {
                   <div className="blog-content">
                     <div className="blog-index">No. {String(i + 1).padStart(2, "0")}</div>
                     <div className="blog-title">{b.title}</div>
-                    <div className="blog-body">{b.content}</div>
+                    <div className={`blog-body ${getUserId(b.author) === getUserId(user) ? "" : "preview"}`}>
+                      {b.content}
+                    </div>
                   </div>
                   <div className="blog-actions">
-                    <button className="btn btn-edit" onClick={() => startEdit(b)}>
-                      Edit
-                    </button>
-                    <button className="btn btn-danger" onClick={() => deleteBlog(b._id)}>
-                      Delete
-                    </button>
+                    {getUserId(b.author) === getUserId(user) ? (
+                      <>
+                        <button className="btn btn-edit" onClick={() => startEdit(b)}>
+                          Edit
+                        </button>
+                        <button className="btn btn-danger" onClick={() => deleteBlog(b._id)}>
+                          Delete
+                        </button>
+                      </>
+                    ) : (
+                      <button className="btn btn-ghost" onClick={() => viewFullBlog(b)}>
+                        View Full Entry
+                      </button>
+                    )}
                   </div>
                 </div>
               </div>
             ))}
+          </div>
+        )}
+
+        {selectedBlog && (
+          <div className="modal-backdrop" onClick={closeFullBlog}>
+            <div className="modal-card" onClick={(e) => e.stopPropagation()}>
+              <h2>{selectedBlog.title}</h2>
+              <p>{selectedBlog.content}</p>
+              <button className="modal-close" onClick={closeFullBlog}>Close</button>
+            </div>
           </div>
         )}
 
