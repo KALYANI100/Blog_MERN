@@ -6,3 +6,4 @@ const installNode = "sudo apt install -y nodejs";
 const fixKeyPermission = "chmod 400 Practice_key.pem";
 
 const sshAzureVM = "ssh -i Practice_key.pem azureuser@<VMIP>";
+const installGit = "sudo apt install -y git";
